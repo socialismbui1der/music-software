@@ -79,7 +79,7 @@ void task_list::accept_request(int epoll_fd, int conn) {
 
         // 处理请求类型
         switch (req_type) {
-            case req_type::login:
+            case req_type::login://socket
                 //不能在lambda中捕获req.msg，因为req是一个局部变量，而msg又是一个指针，它的生命周期是不确定的。
                 ThreadPool::getinstance().addTask([this,msg=std::string(req.msg)](){
                     LOG(DEBUG)<<"登录"<<'\n';
@@ -88,63 +88,63 @@ void task_list::accept_request(int epoll_fd, int conn) {
                     syn_->username=signup_log_->username;
                 });
                 break;
-            case req_type::sighup:
+            case req_type::sighup://socket
                 ThreadPool::getinstance().addTask([this,msg=std::string(req.msg)](){
                     signup_log_->signup((char*)(msg.c_str()));
                 });
                 break;
-            case req_type::update_new_musiclist:
+            case req_type::update_new_musiclist://grpc
                 ThreadPool::getinstance().addTask([this,msg=std::string(req.msg)](){
                     syn_->update_musiclists((char*)msg.c_str());
                 });
                 break;
-            case req_type::update_del_musiclist:
+            case req_type::update_del_musiclist://grpc
                 ThreadPool::getinstance().addTask([this,msg=std::string(req.msg)](){
                     syn_->del_musiclists((char*)msg.c_str());
                 });
                 break;
-            case req_type::update_insert_songs:
+            case req_type::update_insert_songs://grpc
                 ThreadPool::getinstance().addTask([this,msg=std::string(req.msg)](){
                     syn_->insert_musiclist_songs((char*)msg.c_str());
                 });
                 break;
-            case req_type::update_del_songs:
+            case req_type::update_del_songs://grpc
                 ThreadPool::getinstance().addTask([this,msg=std::string(req.msg)](){
                     syn_->del_musiclist_songs((char*)msg.c_str());
                 });
                 break;
-            case req_type::need_data:
-                ThreadPool::getinstance().addTask([this](){
-                    syn_->send_data();
-                });
-                break;
-            case req_type::update_songs:
-                ThreadPool::getinstance().addTask([this](){
-                    syn_->update_song();
-                });
-                break;
-            case req_type::get_last_update:
-                ThreadPool::getinstance().addTask([this](){
-                    syn_->send_update();
-                });
-                break;
-            case req_type::req_end:
-                ThreadPool::getinstance().addTask([this](){
-                    syn_->update_update();
-                });
-                break;
-            case req_type::update_rename_musiclist:
+            // case req_type::need_data://这个可以删了
+            //     ThreadPool::getinstance().addTask([this](){
+            //         syn_->send_data();
+            //     });
+            //     break;
+            // case req_type::update_songs://这个可以删了（更新前端歌曲库的）
+            //     ThreadPool::getinstance().addTask([this](){
+            //         syn_->update_song();
+            //     });
+            //     break;
+            // case req_type::get_last_update://可以保留（发送用户上一次登录时间的）
+            //     ThreadPool::getinstance().addTask([this](){
+            //         syn_->send_update();
+            //     });
+            //     break;
+            // case req_type::req_end://可以删除
+            //     ThreadPool::getinstance().addTask([this](){
+            //         syn_->update_update();
+            //     });
+            //     break;
+            case req_type::update_rename_musiclist://grpc
                 ThreadPool::getinstance().addTask([this,msg=std::string(req.msg)](){
                     syn_->recv_rename_musiclist((char*)msg.c_str());
                 });
                 break;
-            case req_type::get_song_comments:
+            case req_type::get_song_comments://http
                 LOG(DEBUG)<<"获取评论"<<'\n';
                 ThreadPool::getinstance().addTask([this,msg=std::string(req.msg)](){
                     syn_->send_song_comments((char*)msg.c_str());
                 });
                 break;
-            case req_type::update_song_comments:
+            case req_type::update_song_comments://grpc
                 LOG(DEBUG)<<"上传评论"<<'\n';
                 ThreadPool::getinstance().addTask([this,msg=std::string(req.msg)](){
                     syn_->update_song_comments((char*)msg.c_str());
